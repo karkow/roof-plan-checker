@@ -1,65 +1,187 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import ImageUploader from "@/components/ImageUploader";
+import MarkedImage from "@/components/MarkedImage";
+
+interface ComparisonResult {
+  summary: string;
+  totalDifferences: number;
+  differences: Array<{
+    id: number;
+    location: string;
+    type: string;
+    description: string;
+    severity: "critical" | "major" | "minor";
+    coordinates?: { x: number; y: number };
+  }>;
+  recommendation: string;
+}
+
+const severityLabels = {
+  critical: "Kritisch",
+  major: "Schwerwiegend",
+  minor: "Geringfügig",
+};
 
 export default function Home() {
+  const [handdrawnFile, setHanddrawnFile] = useState<File | null>(null);
+  const [cadFile, setCadFile] = useState<File | null>(null);
+  const [handdrawnPreview, setHanddrawnPreview] = useState<string | null>(null);
+  const [cadPreview, setCadPreview] = useState<string | null>(null);
+  const [results, setResults] = useState<ComparisonResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleHanddrawnSelect = (file: File) => {
+    setHanddrawnFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setHanddrawnPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCadSelect = (file: File) => {
+    setCadFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setCadPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCompare = async () => {
+    if (!handdrawnFile || !cadFile) {
+      setError("Bitte laden Sie beide Bilder hoch");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("handdrawn", handdrawnFile);
+      formData.append("cad", cadFile);
+
+      const response = await fetch("/api/compare-plans", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Vergleich fehlgeschlagen");
+      }
+
+      const data = await response.json();
+      setResults(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ein Fehler ist aufgetreten");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const severityColors = {
+    critical: "bg-red-100 text-red-800 border-red-300",
+    major: "bg-orange-100 text-orange-800 border-orange-300",
+    minor: "bg-blue-100 text-blue-800 border-blue-300",
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen p-8 bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold mb-2">Plan Vergleich</h1>
+        <p className="text-gray-600 mb-8">
+          Laden Sie handgezeichnete und CAD-Dachpläne hoch, um Unterschiede zu erkennen
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          <ImageUploader
+            label="Handzeichnung (Referenz)"
+            onImageSelect={handleHanddrawnSelect}
+          />
+          <ImageUploader
+            label="CAD-Plan (zu prüfen)"
+            onImageSelect={handleCadSelect}
+          />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <button
+          onClick={handleCompare}
+          disabled={loading || !handdrawnFile || !cadFile}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+        >
+          {loading ? "Analysiere..." : "Pläne vergleichen"}
+        </button>
+
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+            {error}
+          </div>
+        )}
+
+        {results && cadPreview && handdrawnPreview && (
+          <div className="mt-8 space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h2 className="text-2xl font-bold mb-4">Analyseergebnisse</h2>
+              <p className="text-gray-700 mb-4">{results.summary}</p>
+              <p className="text-lg font-medium">
+                Gefundene Unterschiede: {results.totalDifferences}
+              </p>
+            </div>
+
+            {results.totalDifferences > 0 && (
+              <>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-bold mb-4">Markierter Plan</h3>
+                  <MarkedImage
+                    cadImageUrl={cadPreview}
+                    handdrawnImageUrl={handdrawnPreview}
+                    differences={results.differences}
+                  />
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-bold mb-4">Detaillierte Unterschiede</h3>
+                  <div className="space-y-4">
+                    {results.differences.map((diff) => (
+                      <div
+                        key={diff.id}
+                        className={`p-4 border rounded-lg ${severityColors[diff.severity]}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="flex-shrink-0 w-8 h-8 rounded-full bg-white flex items-center justify-center font-bold">
+                            {diff.id}
+                          </span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold">{diff.location}</h4>
+                              <span className="text-xs px-2 py-1 rounded bg-white">
+                                {severityLabels[diff.severity]}
+                              </span>
+                            </div>
+                            <p className="text-sm mb-1">
+                              <strong>Art:</strong> {diff.type}
+                            </p>
+                            <p className="text-sm">{diff.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-xl font-bold mb-2">Empfehlung</h3>
+                  <p className="text-gray-700">{results.recommendation}</p>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
