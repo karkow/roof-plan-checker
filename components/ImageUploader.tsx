@@ -10,16 +10,27 @@ interface ImageUploaderProps {
 
 export default function ImageUploader({ label, onImageSelect }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [isPdf, setIsPdf] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       onImageSelect(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setFileName(file.name);
+
+      // Check if it's a PDF
+      if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+        setIsPdf(true);
+        setPreview(null);
+      } else {
+        setIsPdf(false);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -31,7 +42,7 @@ export default function ImageUploader({ label, onImageSelect }: ImageUploaderPro
         </span>
         <input
           type="file"
-          accept="image/*"
+          accept="image/*,.pdf,application/pdf"
           onChange={handleFileChange}
           className="hidden"
         />
@@ -44,12 +55,22 @@ export default function ImageUploader({ label, onImageSelect }: ImageUploaderPro
               className="object-contain"
             />
           </div>
+        ) : isPdf ? (
+          <div className="flex flex-col items-center justify-center h-64 text-gray-600 bg-gray-50 rounded">
+            <svg className="w-16 h-16 mb-3 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8.5 13h1.2l.9 2.2.9-2.2h1.2L11.3 16l1.4 3h-1.2l-.9-2.2-.9 2.2H8.5l1.4-3-1.4-3zm4.5 0h1v4.5h2V19h-3v-6z"/>
+            </svg>
+            <span className="font-medium">PDF geladen</span>
+            <span className="text-sm text-gray-500 mt-1 max-w-full truncate px-4">{fileName}</span>
+            <span className="text-xs text-gray-400 mt-2">Wird beim Vergleich konvertiert</span>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
             <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             <span>Klicken zum Hochladen</span>
+            <span className="text-xs mt-1">Bilder oder PDF</span>
           </div>
         )}
       </label>

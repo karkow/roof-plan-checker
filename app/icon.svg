@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Roof shape -->
+  <path d="M16 3L2 14h4v13h20V14h4L16 3z" fill="#3B82F6" stroke="#1E40AF" stroke-width="1.5"/>
+  <!-- Roof lines (plan view style) -->
+  <path d="M16 3L16 14M2 14L16 14M30 14L16 14" stroke="#1E40AF" stroke-width="1" opacity="0.5"/>
+  <!-- Small squares representing Einbauteile (roof components) -->
+  <rect x="9" y="17" width="4" height="4" fill="white" stroke="#1E40AF" stroke-width="0.75"/>
+  <rect x="19" y="17" width="4" height="4" fill="white" stroke="#1E40AF" stroke-width="0.75"/>
+  <rect x="14" y="22" width="4" height="4" fill="white" stroke="#1E40AF" stroke-width="0.75"/>
+  <!-- Checkmark -->
+  <circle cx="24" cy="24" r="6" fill="#22C55E"/>
+  <path d="M21 24l2 2 4-4" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

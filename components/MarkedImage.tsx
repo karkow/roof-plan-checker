@@ -217,13 +217,21 @@ export default function MarkedImage({ cadImageUrl, handdrawnImageUrl, difference
     magnifier.width = magnifierSize;
     magnifier.height = magnifierSize;
 
+    // Calculate scale between original image and displayed canvas
     const scaleX = cadImg.width / canvas.width;
     const scaleY = cadImg.height / canvas.height;
 
-    const sourceX = x * scaleX - (magnifierSize / zoomLevel / 2);
-    const sourceY = y * scaleY - (magnifierSize / zoomLevel / 2);
-    const sourceWidth = magnifierSize / zoomLevel;
-    const sourceHeight = magnifierSize / zoomLevel;
+    // Map mouse position to original image coordinates
+    const imgX = x * scaleX;
+    const imgY = y * scaleY;
+
+    // Calculate how many source pixels to sample for the magnifier
+    // This uses the full resolution of the original image
+    const sourceWidth = (magnifierSize / zoomLevel) * scaleX;
+    const sourceHeight = (magnifierSize / zoomLevel) * scaleY;
+
+    const sourceX = imgX - sourceWidth / 2;
+    const sourceY = imgY - sourceHeight / 2;
 
     // Clear and draw circular mask
     magnifierCtx.clearRect(0, 0, magnifierSize, magnifierSize);
@@ -232,8 +240,18 @@ export default function MarkedImage({ cadImageUrl, handdrawnImageUrl, difference
     magnifierCtx.arc(magnifierSize / 2, magnifierSize / 2, magnifierSize / 2 - 2, 0, 2 * Math.PI);
     magnifierCtx.clip();
 
-    // Draw the appropriate image in magnifier
-    const imgToDraw = compareMode === "handdrawn" ? handdrawnImg : cadImg;
+    // Draw the appropriate image in magnifier based on mode and mouse position
+    let imgToDraw: HTMLImageElement;
+    if (compareMode === "handdrawn") {
+      imgToDraw = handdrawnImg;
+    } else if (compareMode === "slider") {
+      // In slider mode, check which side of the slider the mouse is on
+      const sliderX = (sliderPosition / 100) * rect.width;
+      imgToDraw = x < sliderX ? handdrawnImg : cadImg;
+    } else {
+      imgToDraw = cadImg;
+    }
+
     magnifierCtx.drawImage(
       imgToDraw,
       sourceX, sourceY, sourceWidth, sourceHeight,

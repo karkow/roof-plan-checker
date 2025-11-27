@@ -16,6 +16,10 @@ interface ComparisonResult {
     coordinates?: { x: number; y: number };
   }>;
   recommendation: string;
+  images: {
+    handdrawn: string;
+    cad: string;
+  };
 }
 
 const severityLabels = {
@@ -27,29 +31,9 @@ const severityLabels = {
 export default function Home() {
   const [handdrawnFile, setHanddrawnFile] = useState<File | null>(null);
   const [cadFile, setCadFile] = useState<File | null>(null);
-  const [handdrawnPreview, setHanddrawnPreview] = useState<string | null>(null);
-  const [cadPreview, setCadPreview] = useState<string | null>(null);
   const [results, setResults] = useState<ComparisonResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleHanddrawnSelect = (file: File) => {
-    setHanddrawnFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setHanddrawnPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCadSelect = (file: File) => {
-    setCadFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setCadPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleCompare = async () => {
     if (!handdrawnFile || !cadFile) {
@@ -100,11 +84,11 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-6 mb-6">
           <ImageUploader
             label="Handzeichnung (Referenz)"
-            onImageSelect={handleHanddrawnSelect}
+            onImageSelect={setHanddrawnFile}
           />
           <ImageUploader
             label="CAD-Plan (zu prüfen)"
-            onImageSelect={handleCadSelect}
+            onImageSelect={setCadFile}
           />
         </div>
 
@@ -122,7 +106,7 @@ export default function Home() {
           </div>
         )}
 
-        {results && cadPreview && handdrawnPreview && (
+        {results && (
           <div className="mt-8 space-y-6">
             <div className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-2xl font-bold mb-4">Analyseergebnisse</h2>
@@ -132,17 +116,17 @@ export default function Home() {
               </p>
             </div>
 
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-xl font-bold mb-4">Planvergleich</h3>
+              <MarkedImage
+                cadImageUrl={results.images.cad}
+                handdrawnImageUrl={results.images.handdrawn}
+                differences={results.differences}
+              />
+            </div>
+
             {results.totalDifferences > 0 && (
               <>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-xl font-bold mb-4">Markierter Plan</h3>
-                  <MarkedImage
-                    cadImageUrl={cadPreview}
-                    handdrawnImageUrl={handdrawnPreview}
-                    differences={results.differences}
-                  />
-                </div>
-
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-xl font-bold mb-4">Detaillierte Unterschiede</h3>
                   <div className="space-y-4">
