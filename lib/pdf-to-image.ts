@@ -26,7 +26,7 @@ export async function pdfToImage(
     const convert = fromBuffer(pdfBuffer, options);
 
     // Use ImageMagick (false = ImageMagick, true = GraphicsMagick)
-    convert.setGMClass(false);
+    convert.setGMClass(true);
 
     // Convert first page to base64
     const result = await convert(1, { responseType: "base64" });
