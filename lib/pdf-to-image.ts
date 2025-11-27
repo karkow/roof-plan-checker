@@ -22,22 +22,36 @@ export async function pdfToImage(
     quality: 90,
   };
 
-  const convert = fromBuffer(pdfBuffer, options);
+  try {
+    const convert = fromBuffer(pdfBuffer, options);
 
-  // Use ImageMagick instead of GraphicsMagick
-  convert.setGMClass(true);
+    // Use ImageMagick instead of GraphicsMagick
+    convert.setGMClass(true);
 
-  // Convert first page to base64
-  const result = await convert(1, { responseType: "base64" });
+    // Convert first page to base64
+    const result = await convert(1, { responseType: "base64" });
 
-  if (!result.base64) {
-    throw new Error("PDF conversion failed - no output generated");
+    if (!result.base64) {
+      throw new Error("PDF conversion produced no output");
+    }
+
+    return {
+      base64: result.base64,
+      mimeType: "image/jpeg",
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+
+    // Check for common ImageMagick errors
+    if (message.includes("command not found") || message.includes("ENOENT")) {
+      throw new Error("PDF-Konvertierung fehlgeschlagen: ImageMagick ist nicht installiert");
+    }
+    if (message.includes("not authorized") || message.includes("policy")) {
+      throw new Error("PDF-Konvertierung fehlgeschlagen: ImageMagick PDF-Policy nicht konfiguriert");
+    }
+
+    throw new Error(`PDF-Konvertierung fehlgeschlagen: ${message}`);
   }
-
-  return {
-    base64: result.base64,
-    mimeType: "image/jpeg",
-  };
 }
 
 /**

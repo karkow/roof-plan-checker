@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Next.js app using Google Gemini 2.5 Flash to compare hand-drawn and CAD roof plans. The UI and AI responses are in German. Supports both image and PDF uploads.
+A Next.js app using Google Gemini 2.5 Flash to compare hand-drawn and CAD roof plans. The UI and AI responses are in German. Supports both image and PDF uploads. Includes accessibility features, touch/mobile support, and performance optimizations.
 
 ## Tech Stack
 
@@ -28,7 +28,7 @@ app/
 ├── api/compare-plans/route.ts  # POST endpoint, handles PDF conversion
 ├── page.tsx                     # Main UI (German, client component)
 ├── test/page.tsx                # Test page for MarkedImage component
-├── layout.tsx
+├── layout.tsx                   # Root layout (lang="de")
 └── globals.css
 
 components/
@@ -36,20 +36,25 @@ components/
 └── MarkedImage.tsx              # Canvas with markers, magnifier & comparison slider
 
 lib/
-├── gemini.ts                    # Gemini API client (German prompts)
+├── types.ts                     # Shared types and constants (Difference, ComparisonResult, etc.)
+├── gemini.ts                    # Gemini API client (German prompts, JSON validation)
 └── pdf-to-image.ts              # PDF to JPEG conversion using ImageMagick
 ```
 
 ## Key Files
 
-- `lib/gemini.ts` - `compareRoofPlans()` sends two images to Gemini with German prompts; returns structured JSON with differences. Uses term "Einbauteile" for roof components (windows, vents, chimneys).
+- `lib/types.ts` - Shared TypeScript types (Difference, ComparisonResult) and constants (MAX_FILE_SIZE, ALLOWED_IMAGE_TYPES, SEVERITY_LABELS, SEVERITY_COLORS)
+- `lib/gemini.ts` - `compareRoofPlans()` sends two images to Gemini with German prompts; returns structured JSON with differences. Uses term "Einbauteile" for roof components (windows, vents, chimneys). Includes JSON response validation.
 - `lib/pdf-to-image.ts` - Converts PDF first page to JPEG using pdf2pic/ImageMagick
-- `app/api/compare-plans/route.ts` - Handles multipart form upload, converts PDFs to images, calls Gemini, returns results with converted images
+- `app/api/compare-plans/route.ts` - Handles multipart form upload, validates file size/type, converts PDFs to images, calls Gemini, returns results with converted images
 - `components/MarkedImage.tsx` - Draws numbered circles on canvas, includes:
   - **Magnifying glass**: 2.5x zoom on mouse hover (uses full image resolution)
   - **Comparison slider**: Drag to compare handdrawn (left) vs CAD (right)
   - Three view modes: CAD-Plan, Handzeichnung, Vergleichs-Slider
   - Magnifier shows correct image based on slider position
+  - **Touch support**: Mobile-optimized event handling
+  - **Performance**: Throttled updates (~60fps)
+  - **Accessibility**: ARIA labels, keyboard focus states
 
 ## API Response Format
 

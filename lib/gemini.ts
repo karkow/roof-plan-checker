@@ -1,11 +1,72 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Difference } from "./types";
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+// Validate API key at module load
+const apiKey = process.env.GOOGLE_AI_API_KEY;
+if (!apiKey) {
+  console.warn("Warning: GOOGLE_AI_API_KEY is not set");
+}
+
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+
+interface GeminiResponse {
+  summary: string;
+  totalDifferences: number;
+  differences: Difference[];
+  recommendation: string;
+}
+
+function validateGeminiResponse(data: unknown): GeminiResponse {
+  if (typeof data !== "object" || data === null) {
+    throw new Error("Invalid response: expected object");
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  if (typeof obj.summary !== "string") {
+    throw new Error("Invalid response: missing or invalid summary");
+  }
+  if (typeof obj.totalDifferences !== "number") {
+    throw new Error("Invalid response: missing or invalid totalDifferences");
+  }
+  if (!Array.isArray(obj.differences)) {
+    throw new Error("Invalid response: missing or invalid differences array");
+  }
+  if (typeof obj.recommendation !== "string") {
+    throw new Error("Invalid response: missing or invalid recommendation");
+  }
+
+  // Validate each difference
+  for (const diff of obj.differences) {
+    if (typeof diff !== "object" || diff === null) {
+      throw new Error("Invalid difference object");
+    }
+    const d = diff as Record<string, unknown>;
+    if (typeof d.id !== "number") throw new Error("Invalid difference: missing id");
+    if (typeof d.location !== "string") throw new Error("Invalid difference: missing location");
+    if (typeof d.description !== "string") throw new Error("Invalid difference: missing description");
+    if (!["critical", "major", "minor"].includes(d.severity as string)) {
+      throw new Error("Invalid difference: invalid severity");
+    }
+  }
+
+  return {
+    summary: obj.summary,
+    totalDifferences: obj.totalDifferences,
+    differences: obj.differences as Difference[],
+    recommendation: obj.recommendation,
+  };
+}
 
 export async function compareRoofPlans(
   handdrawnBase64: string,
-  cadBase64: string
-) {
+  cadBase64: string,
+  mimeType: string = "image/jpeg"
+): Promise<GeminiResponse> {
+  if (!genAI) {
+    throw new Error("Google AI API key is not configured");
+  }
+
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `Du bist ein Experte für Dachplan-Analyse. Vergleiche diese beiden Dachpläne:
@@ -46,13 +107,13 @@ Antworte auf Deutsch und gib deine Antwort in diesem exakten JSON-Format zurück
     prompt,
     {
       inlineData: {
-        mimeType: "image/jpeg",
+        mimeType,
         data: handdrawnBase64,
       },
     },
     {
       inlineData: {
-        mimeType: "image/jpeg",
+        mimeType,
         data: cadBase64,
       },
     },
@@ -65,5 +126,12 @@ Antworte auf Deutsch und gib deine Antwort in diesem exakten JSON-Format zurück
   const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/\{[\s\S]*\}/);
   const jsonText = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : text;
 
-  return JSON.parse(jsonText);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    throw new Error("Failed to parse AI response as JSON");
+  }
+
+  return validateGeminiResponse(parsed);
 }

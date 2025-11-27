@@ -9,9 +9,11 @@ Eine Next.js-Anwendung, die Google Gemini Vision AI verwendet, um handgezeichnet
 - Deutsche Benutzeroberfläche und KI-Antworten
 - Visuelle Markierungen auf erkannten Unterschieden
 - Schweregrad-Klassifizierung (kritisch, schwerwiegend, geringfügig)
-- **Lupe**: Vergrößerungsglas beim Hover über das Bild für Details
+- **Lupe**: Vergrößerungsglas beim Hover über das Bild für Details (volle Bildauflösung)
 - **Vergleichs-Slider**: Interaktiver Slider zum Vergleich von Handzeichnung und CAD-Plan
 - **PDF-Support**: Automatische Konvertierung von PDF zu Bild
+- **Touch-Support**: Mobile-optimierte Bedienung für Lupe und Slider
+- **Barrierefreiheit**: ARIA-Labels, Tastaturnavigation, Screen-Reader-Unterstützung
 - Detaillierte Analyse mit Empfehlungen
 
 ## Tech Stack
@@ -108,6 +110,7 @@ Open http://localhost:3000
 │   ├── ImageUploader.tsx            # Image/PDF upload component
 │   └── MarkedImage.tsx              # Image with markers, magnifier & comparison slider
 ├── lib/
+│   ├── types.ts                     # Shared TypeScript types and constants
 │   ├── gemini.ts                    # Gemini API client (German prompts)
 │   └── pdf-to-image.ts              # PDF to image conversion
 └── .env.local                       # Environment variables

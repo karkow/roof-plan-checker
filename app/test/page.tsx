@@ -1,28 +1,32 @@
 "use client";
 
 import MarkedImage from "@/components/MarkedImage";
+import { Difference } from "@/lib/types";
 
 // Mock differences for testing
-const mockDifferences = [
+const mockDifferences: Difference[] = [
   {
     id: 1,
     location: "Obere linke Ecke",
+    type: "Fehlendes Element",
     description: "Einbauteil fehlt im CAD-Plan",
-    severity: "critical" as const,
+    severity: "critical",
     coordinates: { x: 15, y: 20 },
   },
   {
     id: 2,
     location: "Mitte rechts",
+    type: "Maßabweichung",
     description: "Maße weichen ab",
-    severity: "major" as const,
+    severity: "major",
     coordinates: { x: 75, y: 45 },
   },
   {
     id: 3,
     location: "Unterer Bereich",
+    type: "Positionsabweichung",
     description: "Kleine Positionsabweichung",
-    severity: "minor" as const,
+    severity: "minor",
     coordinates: { x: 40, y: 80 },
   },
 ];
@@ -58,7 +62,9 @@ export default function TestPage() {
                   [{diff.severity}]
                 </span>
                 <span>{diff.location}: {diff.description}</span>
-                <span className="text-gray-400">({diff.coordinates.x}%, {diff.coordinates.y}%)</span>
+                {diff.coordinates && (
+                  <span className="text-gray-400">({diff.coordinates.x}%, {diff.coordinates.y}%)</span>
+                )}
               </div>
             ))}
           </div>
